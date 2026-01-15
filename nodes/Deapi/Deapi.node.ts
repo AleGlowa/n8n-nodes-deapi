@@ -10,7 +10,7 @@ export class Deapi implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'deAPI',
 		name: 'deapi',
-		icon: 'file:deapi.svg',// { light: 'file:example.svg', dark: 'file:example.dark.svg' },
+		icon: 'file:deapi.svg',
 		group: ['input'],
 		version: 1,
 		description: 'Basic Example Node',
