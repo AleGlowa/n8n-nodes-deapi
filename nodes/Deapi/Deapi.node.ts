@@ -13,6 +13,7 @@ export class Deapi implements INodeType {
 		icon: 'file:deapi.svg',
 		group: ['transform'],
 		version: 1,
+    subtitle: '={{ $parameter["operation"] + ": " + $parameter["resource"] }}',
 		description: 'Interact with deAPI models',
 		defaults: {
 			name: 'deAPI',
@@ -30,14 +31,27 @@ export class Deapi implements INodeType {
 		properties: [
 			// Node properties which the user gets displayed and
 			// can change on the node.
-			{
-				displayName: 'My String',
-				name: 'myString',
-				type: 'string',
-				default: '',
-				placeholder: 'Placeholder value',
-				description: 'The description text',
-			},
+      {
+        displayName: 'Resource',
+        name: 'resource',
+        type: 'options',
+        noDataExpression: true,
+        options: [
+          {
+            name: 'Image',
+            value: 'image',
+          },
+          {
+            name: 'Video',
+            value: 'video',
+          },
+          {
+            name: 'Audio',
+            value: 'audio',
+          }
+        ],
+        default: 'image',
+      },
 		],
 	};
 
