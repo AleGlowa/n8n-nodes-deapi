@@ -1,4 +1,8 @@
-import type { INodeProperties } from 'n8n-workflow';
+import type {
+  INodeProperties,
+  IExecuteFunctions,
+  INodeExecutionData
+} from 'n8n-workflow';
 import { updateDisplayOptions } from 'n8n-workflow';
 
 const properties: INodeProperties[] = [
@@ -37,7 +41,7 @@ const properties: INodeProperties[] = [
         value: 'ZImageTurbo_INT8'
       },
       {
-        name: 'Flux.1 schnell',
+        name: 'Flux.1 Schnell',
         value: 'Flux1schnell'
       },
     ],
@@ -108,7 +112,7 @@ const properties: INodeProperties[] = [
       },
       {
         displayName: 'Steps',
-        name: 'steps',
+        name: 'ZImageTurbo_INT8_steps',
         type: 'number',
         description: 'Number of inference steps',
         typeOptions: {
@@ -116,13 +120,35 @@ const properties: INodeProperties[] = [
           minValue: 1,
           numberPrecision: 0,
         },
+        displayOptions: {
+          show: {
+            '/model': ['ZImageTurbo_INT8']
+          },
+        },
         default: 8,
+      },
+      {
+        displayName: 'Steps',
+        name: 'Flux1schnell_steps',
+        type: 'number',
+        description: 'Number of inference steps',
+        typeOptions: {
+          maxValue: 10,
+          minValue: 1,
+          numberPrecision: 0,
+        },
+        displayOptions: {
+          show: {
+            '/model': ['Flux1schnell']
+          },
+        },
+        default: 4,
       },
       {
         displayName: 'Seed',
         name: 'seed',
         type: 'number',
-        description: 'Random seed for generation. By default seed is random',
+        description: 'Random seed for generation. By default seed is random.',
         typeOptions: {
           maxValue: 10000,
           minValue: -1,
@@ -149,3 +175,14 @@ const displayOptions = {
 };
 
 export const description = updateDisplayOptions(displayOptions, properties);
+
+// export async function execute(this: IExecuteFunctions, i: number): Promise<INodeExecutionData[]> {
+//   const model = this.getNodeParameter('model', i) as string;
+//   const prompt = this.getNodeParameter('prompt', i) as string;
+//   const options = this.getNodeParameter('options', i, {});
+//   const binaryPropertyOutput = this.getNodeParameter(
+// 		'options.binaryPropertyOutput',
+// 		i,
+// 		'data',
+// 	) as string;
+// }
