@@ -6,6 +6,8 @@ import type {
 } from 'n8n-workflow';
 import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 
+import * as image from './actions/image';
+
 export class Deapi implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'deAPI',
@@ -52,6 +54,7 @@ export class Deapi implements INodeType {
         ],
         default: 'image',
       },
+      ...image.description,
 		],
 	};
 
