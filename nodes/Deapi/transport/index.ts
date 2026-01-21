@@ -19,21 +19,6 @@ export async function apiRequest(
   parameters?: RequestParameters,
 ) {
   const { body, qs, option, headers } = parameters ?? {};
-  // let headers = parameters?.headers ?? {};
-
-  // const credentials = await this.getCredentials('deApi');
-
-  // if (
-	// 	credentials.header &&
-	// 	typeof credentials.headerName === 'string' &&
-	// 	credentials.headerName &&
-	// 	typeof credentials.headerValue === 'string'
-	// ) {
-	// 	headers = {
-	// 		...headers,
-	// 		[credentials.headerName]: credentials.headerValue,
-	// 	};
-	// }
 
   const url = `https://api.deapi.ai/api/v1/client${endpoint}`;
 

@@ -10,7 +10,7 @@ describe('deAPI transport', () => {
   });
 
   it('should call httpRequestWithAuthentication with correct parameters', async () => {
-    
+
     await apiRequest.call(executeFunctionsMock, 'GET', '/models', {
 			headers: {
         'Accept': 'application/json',
@@ -34,6 +34,26 @@ describe('deAPI transport', () => {
         headers: {
           'Accept': 'application/json',
         },
+      },
+    );
+  });
+
+  it('should override the values with `option`', async () => {
+
+    await apiRequest.call(executeFunctionsMock, 'GET', '', {
+      option: {
+        url: 'https://dupa.pl',
+        returnFullResponse: true,
+      },
+    });
+
+    expect(executeFunctionsMock.helpers.httpRequestWithAuthentication).toHaveBeenCalledWith(
+      'deApi',
+      {
+        method: 'GET',
+        url: 'https://dupa.pl',
+        json: true,
+        returnFullResponse: true,
       },
     );
   });
