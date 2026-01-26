@@ -1,6 +1,6 @@
 import type { IExecuteFunctions } from 'n8n-workflow';
 import { mockDeep } from 'jest-mock-extended';
-import { apiRequest } from '.';
+import { apiRequest} from './index';
 
 describe('deAPI transport', () => {
   const executeFunctionsMock = mockDeep<IExecuteFunctions>();

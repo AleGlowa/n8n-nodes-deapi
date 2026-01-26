@@ -1,9 +1,15 @@
 import type {
   INodeProperties,
   IExecuteFunctions,
-  INodeExecutionData
+  INodeExecutionData,
 } from 'n8n-workflow';
 import { updateDisplayOptions } from 'n8n-workflow';
+
+import type {
+  TextToImageRequest,
+  Response,
+} from '../../helpers/interfaces';
+import { apiRequest } from '../../transport';
 
 const properties: INodeProperties[] = [
   {
@@ -53,19 +59,19 @@ const properties: INodeProperties[] = [
     description: 'Aspect ratio of the generated image',
     options: [
       {
-        name: '1:1',
-        value: '1:1',
+        name: 'Square',
+        value: 'square',
       },
       {
-        name: '16:9',
-        value: '16:9',
+        name: 'Landscape',
+        value: 'landscape',
       },
       {
-        name: '9:16',
-        value: '9:16',
+        name: 'Portrait',
+        value: 'portrait',
       },
     ],
-    default: '1:1',
+    default: 'square',
   },
   {
     displayName: 'Options',
@@ -131,7 +137,7 @@ const properties: INodeProperties[] = [
         displayOptions: {
           show: {
             '/model': ['ZImageTurbo_INT8', 'Flux1schnell'],
-            '/ratio': ['1:1'],
+            '/ratio': ['square'],
           },
         },
         default: '768x768',
@@ -150,7 +156,7 @@ const properties: INodeProperties[] = [
         displayOptions: {
           show: {
             '/model': ['ZImageTurbo_INT8'],
-            '/ratio': ['16:9'],
+            '/ratio': ['landscape'],
           },
         },
         default: '2048x1152',
@@ -173,7 +179,7 @@ const properties: INodeProperties[] = [
         displayOptions: {
           show: {
             '/model': ['Flux1schnell'],
-            '/ratio': ['16:9'],
+            '/ratio': ['landscape'],
           },
         },
         default: '1280x720',
@@ -192,7 +198,7 @@ const properties: INodeProperties[] = [
         displayOptions: {
           show: {
             '/model': ['ZImageTurbo_INT8'],
-            '/ratio': ['9:16'],
+            '/ratio': ['portrait'],
           },
         },
         default: '1152x2048',
@@ -215,7 +221,7 @@ const properties: INodeProperties[] = [
         displayOptions: {
           show: {
             '/model': ['Flux1schnell'],
-            '/ratio': ['9:16'],
+            '/ratio': ['portrait'],
           },
         },
         default: '720x1280',
@@ -260,7 +266,8 @@ const properties: INodeProperties[] = [
         type: 'number',
         description: 'Random seed for generation. By default seed is random.',
         typeOptions: {
-          maxValue: Number.MAX_SAFE_INTEGER,
+          // Max 32-bit unsigned number
+          maxValue: 4_294_967_295,
           minValue: -1,
           numberPrecision: 0,
         },
@@ -286,13 +293,108 @@ const displayOptions = {
 
 export const description = updateDisplayOptions(displayOptions, properties);
 
-// export async function execute(this: IExecuteFunctions, i: number): Promise<INodeExecutionData[]> {
-//   const model = this.getNodeParameter('model', i) as string;
-//   const prompt = this.getNodeParameter('prompt', i) as string;
-//   const options = this.getNodeParameter('options', i, {});
-//   const binaryPropertyOutput = this.getNodeParameter(
-// 		'options.binaryPropertyOutput',
-// 		i,
-// 		'data',
-// 	) as string;
-// }
+export async function execute(this: IExecuteFunctions, i: number): Promise<INodeExecutionData[]> {
+  // Combine these types for switch statements, to conclude default values when options aren't provided.
+  type Model = 'ZImageTurbo_INT8' | 'Flux1schnell';
+  type Ratio = 'square' | 'landscape' | 'portrait';
+
+  const prompt = this.getNodeParameter('prompt', i) as string;
+  const negativePrompt = this.getNodeParameter('negative_prompt', i) as string;
+  const model = this.getNodeParameter('model', i) as Model;
+  const ratio = this.getNodeParameter('ratio', i) as Ratio;
+  const options = this.getNodeParameter('options', i);
+
+  const size = (
+    options.square_size ??
+    options.ZImageTurbo_INT8_landscape_size ??
+    options.ZImageTurbo_INT8_portrait_size ??
+    options.Flux1schnell_landscape_size ??
+    options.Flux1schnell_portrait_size
+  ) as string;
+  delete options.Flux1schnell_portrait_size;
+  delete options.ZImageTurbo_INT8_portrait_size;
+  delete options.Flux1schnell_landscape_size;
+  delete options.ZImageTurbo_INT8_landscape_size;
+  delete options.square_size;
+
+  // Width and height
+  let width: number, height: number;
+  if (size == null) {
+    switch (`${model}-${ratio}`) {
+      case 'ZImageTurbo_INT8-square':
+      case 'Flux1schnell-square':
+        width = 768;
+        height = 768;
+        break;
+      case 'ZImageTurbo_INT8-landscape':
+        width = 2048;
+        height = 1152;
+        break;
+      case 'Flux1schnell-landscape':
+        width = 1280;
+        height = 720;
+        break;
+      case 'ZImageTurbo_INT8-portrait':
+        width = 1152;
+        height = 2048;
+        break;
+      case 'Flux1schnell-portrait':
+      default:
+        width = 720;
+        height = 1280;
+        break;
+    }
+  } else {
+    [width, height] = size.split('x').map(Number);
+  }
+
+  // Steps
+  let steps = (
+    options.ZImageTurbo_INT8_steps ??
+    options.Flux1schnell_steps
+  ) as number;
+  if (steps == null) {
+    switch (model) {
+      case 'ZImageTurbo_INT8':
+        steps = 8;
+        break;
+      case 'Flux1schnell':
+        steps = 4;
+        break;
+    }
+  }
+  delete options.Flux1schnell_steps;
+  delete options.ZImageTurbo_INT8_steps;
+
+  // Seed
+  let seed = options.seed as number;
+  if (seed == null || seed === -1) {
+    seed = Math.floor(Math.random() * 4_294_967_296);
+  }
+  delete options.seed;
+
+  const body: TextToImageRequest = {
+    prompt: prompt,
+    negative_prompt: negativePrompt,
+    model: model,
+    width: width,
+    height: height,
+    steps: steps,
+    seed: seed,
+  };
+
+  const response = await (apiRequest.call(this, 'POST', '/txt2img', { body })) as Response;
+
+  return [{
+    json: response,
+    pairedItem: {
+      item: i,
+    }
+  }];
+  // const binaryPropertyOutput = this.getNodeParameter(
+	// 	'options.binaryPropertyOutput',
+	// 	i,
+	// 	'data',
+	// ) as string;
+
+}

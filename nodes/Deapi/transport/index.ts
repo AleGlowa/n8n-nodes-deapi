@@ -18,7 +18,11 @@ export async function apiRequest(
   endpoint: string,
   parameters?: RequestParameters,
 ) {
-  const { body, qs, option, headers } = parameters ?? {};
+  const { body, qs, option } = parameters ?? {};
+  const headers = parameters?.headers ?? {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+  }
 
   const url = `https://api.deapi.ai/api/v1/client${endpoint}`;
 
