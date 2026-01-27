@@ -1,0 +1,67 @@
+import {
+  IExecuteFunctions,
+  INodeExecutionData,
+  INodeProperties,
+  updateDisplayOptions,
+} from "n8n-workflow";
+
+import type {
+  BoostTextToImagePromptRequest,
+  BoosterResponse,
+} from '../../helpers/interfaces';
+import { apiRequest } from '../../transport';
+
+const properties: INodeProperties[] = [
+  {
+    displayName: 'Prompt',
+    name: 'prompt',
+    type: 'string',
+    required: true,
+    placeholder: 'e.g. Red Bull F1 car from 2025',
+    description: 'A prompt to boost',
+    default: '',
+    typeOptions: {
+      rows: 2,
+    },
+  },
+  {
+    displayName: 'Negative Prompt',
+    name: 'negative_prompt',
+    type: 'string',
+    placeholder: 'e.g. blur, darkness, noise',
+    description: 'A negative prompt to boost',
+    default: '',
+    typeOptions: {
+      rows: 1,
+    },
+  },
+];
+
+const displayOptions = {
+	show: {
+		operation: ['boostTextToImage'],
+		resource: ['prompt'],
+	},
+};
+
+export const description = updateDisplayOptions(displayOptions, properties);
+
+export async function execute(this: IExecuteFunctions, i: number): Promise<INodeExecutionData[]> {
+
+  const prompt = this.getNodeParameter('prompt', i) as string;
+  const negativePrompt = this.getNodeParameter('negative_prompt', i) as string;
+
+  const body: BoostTextToImagePromptRequest = {
+    prompt: prompt,
+    negative_prompt: negativePrompt,
+  };
+
+  const response = await (apiRequest.call(this, 'POST', '/prompt/image', { body })) as BoosterResponse;
+
+  return [{
+    json: response,
+    pairedItem: {
+      item: i,
+    }
+  }];
+}
