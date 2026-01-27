@@ -1,8 +1,8 @@
 import type { INodeProperties } from 'n8n-workflow';
 
-import * as boostTextToImage from './boostTextToImage.operation';
+import * as imagePromptBooster from './imagePromptBooster.operation';
 
-export { boostTextToImage };
+export { imagePromptBooster };
 
 export const description: INodeProperties[] = [
   {
@@ -12,18 +12,18 @@ export const description: INodeProperties[] = [
     noDataExpression: true,
     options: [
       {
-        name: 'Boost a Prompt For Text-to-Image',
-        value: 'boostTextToImage',
-        action: 'Boost a Prompt For Text-to-Image',
+        name: 'Image Prompt Booster',
+        value: 'imagePromptBooster',
+        action: 'Image prompt booster',
         description: 'Optimizes a prompt for text-to-image generation'
       },
     ],
-    default: 'boostTextToImage',
+    default: 'imagePromptBooster',
     displayOptions: {
       show: {
         resource: ['prompt'],
       },
     },
   },
-  ...boostTextToImage.description,
+  ...imagePromptBooster.description,
 ];

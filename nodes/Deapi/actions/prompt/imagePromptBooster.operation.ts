@@ -6,7 +6,7 @@ import {
 } from "n8n-workflow";
 
 import type {
-  BoostTextToImagePromptRequest,
+  ImagePromptBoosterRequest,
   BoosterResponse,
 } from '../../helpers/interfaces';
 import { apiRequest } from '../../transport';
@@ -39,7 +39,7 @@ const properties: INodeProperties[] = [
 
 const displayOptions = {
 	show: {
-		operation: ['boostTextToImage'],
+		operation: ['imagePromptBooster'],
 		resource: ['prompt'],
 	},
 };
@@ -51,7 +51,7 @@ export async function execute(this: IExecuteFunctions, i: number): Promise<INode
   const prompt = this.getNodeParameter('prompt', i) as string;
   const negativePrompt = this.getNodeParameter('negative_prompt', i) as string;
 
-  const body: BoostTextToImagePromptRequest = {
+  const body: ImagePromptBoosterRequest = {
     prompt: prompt,
     negative_prompt: negativePrompt,
   };

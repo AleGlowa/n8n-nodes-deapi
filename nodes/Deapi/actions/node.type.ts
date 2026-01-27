@@ -2,7 +2,7 @@ import { AllEntities } from "n8n-workflow";
 
 type NodeMap = {
   image: 'generate';
-  prompt: 'boostTextToImage';
+  prompt: 'imagePromptBooster';
 };
 
 export type DeApiType = AllEntities<NodeMap>;
