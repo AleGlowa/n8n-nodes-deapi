@@ -12,9 +12,6 @@ describe('deAPI transport', () => {
   it('should call httpRequestWithAuthentication with correct parameters', async () => {
 
     await apiRequest.call(executeFunctionsMock, 'GET', '/models', {
-			headers: {
-        'Accept': 'application/json',
-			},
 			qs: {
 				per_page: 15,
         page: 1,
@@ -30,9 +27,6 @@ describe('deAPI transport', () => {
         qs: {
           per_page: 15,
           page: 1,
-        },
-        headers: {
-          'Accept': 'application/json',
         },
       },
     );

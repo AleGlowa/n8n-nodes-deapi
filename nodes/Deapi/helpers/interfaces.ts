@@ -16,7 +16,7 @@ export interface TextToImageRequest extends IDataObject {
 
 export interface ImagePromptBoosterRequest extends IDataObject {
   prompt: string,
-  negative_prompt?: string,
+  negative_prompt: string | null,
 }
 
 export interface GenerationResponse extends IDataObject {
@@ -25,7 +25,7 @@ export interface GenerationResponse extends IDataObject {
 
 export interface BoosterResponse extends IDataObject {
   prompt: string,
-  negative_prompt?: string,
+  negative_prompt: string | null,
 }
 
 // export interface StatusResponse {

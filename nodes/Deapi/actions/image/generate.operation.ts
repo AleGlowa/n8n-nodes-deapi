@@ -7,7 +7,7 @@ import { updateDisplayOptions } from 'n8n-workflow';
 
 import type {
   TextToImageRequest,
-  Response,
+  GenerationResponse,
 } from '../../helpers/interfaces';
 import { apiRequest } from '../../transport';
 
@@ -72,6 +72,7 @@ const properties: INodeProperties[] = [
       },
     ],
     default: 'square',
+    noDataExpression: true,
   },
   {
     displayName: 'Options',
@@ -383,7 +384,7 @@ export async function execute(this: IExecuteFunctions, i: number): Promise<INode
     seed: seed,
   };
 
-  const response = await (apiRequest.call(this, 'POST', '/txt2img', { body })) as Response;
+  const response = await (apiRequest.call(this, 'POST', '/txt2img', { body })) as GenerationResponse;
 
   return [{
     json: response,
