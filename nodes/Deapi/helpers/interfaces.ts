@@ -27,11 +27,3 @@ export interface BoosterResponse extends IDataObject {
   prompt: string,
   negative_prompt: string | null,
 }
-
-// export interface StatusResponse {
-//   status: string,
-//   preview: string,
-//   result_url: string,
-//   result: string,
-//   progress: number,
-// }

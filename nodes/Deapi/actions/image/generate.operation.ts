@@ -274,13 +274,6 @@ const properties: INodeProperties[] = [
         },
         default: -1,
       },
-      {
-				displayName: 'Put Output in Field',
-				name: 'binaryPropertyOutput',
-				type: 'string',
-				default: 'data',
-				hint: 'The name of the output field to put the binary file data in',
-			},
     ]
   }
 ];
@@ -392,10 +385,4 @@ export async function execute(this: IExecuteFunctions, i: number): Promise<INode
       item: i,
     }
   }];
-  // const binaryPropertyOutput = this.getNodeParameter(
-	// 	'options.binaryPropertyOutput',
-	// 	i,
-	// 	'data',
-	// ) as string;
-
 }
