@@ -1,11 +1,12 @@
-import * as crypto from 'crypto';
-
 import type {
 	IWebhookFunctions,
 	IWebhookResponseData,
 	INodeExecutionData,
   IDataObject,
 } from 'n8n-workflow';
+
+import { verifyWebhookSignature } from './helpers/webhook-verification';
+import { downloadAndPrepareBinaryData } from './helpers/binary-data';
 
 export async function webhook(this: IWebhookFunctions): Promise<IWebhookResponseData> {
 	// Get response object for sending HTTP responses
@@ -20,31 +21,13 @@ export async function webhook(this: IWebhookFunctions): Promise<IWebhookResponse
 	const signature = headers['x-deapi-signature'] as string;
 	const timestamp = headers['x-deapi-timestamp'] as string;
 
-	// Get raw body for signature verification
+	// Get request object for raw body and parsed body
 	const req = this.getRequestObject();
 	const rawBody = req.rawBody;
+	const body = req.body;
 
-	// Verify timestamp is within 5 minutes
-	const now = Math.floor(Date.now() / 1000);
-	if (!timestamp || Math.abs(now - parseInt(timestamp)) > 300) {
-		res.status(401).send('Invalid signature');
-		return {
-			noWebhookResponse: true,
-		};
-	}
-
-	// Calculate expected signature
-	const message = `${timestamp}.${rawBody}`;
-	const expected = 'sha256=' + crypto
-		.createHmac('sha256', secret)
-		.update(message)
-		.digest('hex');
-
-	// Timing-safe comparison
-	if (!signature || !crypto.timingSafeEqual(
-		Buffer.from(signature),
-		Buffer.from(expected)
-	)) {
+	// Verify webhook signature
+	if (!verifyWebhookSignature(secret, signature, timestamp, rawBody)) {
 		res.status(401).send('Invalid signature');
 		return {
 			noWebhookResponse: true,
@@ -52,7 +35,6 @@ export async function webhook(this: IWebhookFunctions): Promise<IWebhookResponse
 	}
 
 	// Signature verified, proceed with webhook processing
-	const body = this.getBodyData();
 	const event = body.event as string;
 
 	// DeAPI sends three types of events:
@@ -73,29 +55,13 @@ export async function webhook(this: IWebhookFunctions): Promise<IWebhookResponse
 		const data = body.data as IDataObject;
 		const resultUrl = data.result_url as string;
 
-		// Download the binary file from the result URL
-		const binaryData = await this.helpers.httpRequest({
-			method: 'GET',
-			url: resultUrl,
-			encoding: 'arraybuffer',
-			returnFullResponse: true,
-		});
-
-		// Extract filename from URL
-		const urlPath = new URL(resultUrl).pathname;
-		const filename = urlPath.split('/').pop() || 'output';
-
-		// Determine mime type from content-type header
-		const mimeType = binaryData.headers['content-type'];
+		// Download and prepare binary data
+		const binaryData = await downloadAndPrepareBinaryData(this, resultUrl);
 
 		const response: INodeExecutionData = {
 			json: {},
 			binary: {
-				data: await this.helpers.prepareBinaryData(
-					binaryData.body as Buffer,
-					filename,
-					mimeType,
-				),
+				data: binaryData,
 			},
 		};
 

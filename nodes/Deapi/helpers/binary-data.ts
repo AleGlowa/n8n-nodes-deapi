@@ -1,6 +1,7 @@
 import {
   IBinaryData,
   IExecuteFunctions,
+  IWebhookFunctions,
 } from "n8n-workflow";
 
 /** Chunk size to use for streaming. 256Kb */
@@ -38,4 +39,38 @@ export async function getBinaryDataFile(
     contentType: binaryData.mimeType,
     fileContent,
   };
+}
+
+/**
+ * Downloads a binary file from a URL and prepares it as n8n binary data.
+ *
+ * @param ctx - The execution or webhook context
+ * @param resultUrl - The URL to download the file from
+ * @returns Prepared binary data ready to be attached to workflow output
+ */
+export async function downloadAndPrepareBinaryData(
+  ctx: IExecuteFunctions | IWebhookFunctions,
+  resultUrl: string,
+): Promise<IBinaryData> {
+  // Download the binary file from the result URL
+  const binaryData = await ctx.helpers.httpRequest({
+    method: 'GET',
+    url: resultUrl,
+    encoding: 'arraybuffer',
+    returnFullResponse: true,
+  });
+
+  // Extract filename from URL
+  const urlPath = new URL(resultUrl).pathname;
+  const filename = urlPath.split('/').pop() || 'output';
+
+  // Determine mime type from content-type header
+  const mimeType = binaryData.headers['content-type'];
+
+  // Prepare and return binary data
+  return await ctx.helpers.prepareBinaryData(
+    binaryData.body as Buffer,
+    filename,
+    mimeType,
+  );
 }
