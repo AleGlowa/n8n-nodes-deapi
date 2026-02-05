@@ -2,12 +2,14 @@ import type {
 	IExecuteFunctions,
 	INodeType,
 	INodeTypeDescription,
+	IWebhookFunctions,
 } from 'n8n-workflow';
 import { NodeConnectionTypes } from 'n8n-workflow';
 
 import * as image from './actions/image';
 import * as prompt from './actions/prompt';
 import { router } from './actions/router';
+import { webhook } from './webhook';
 
 export class Deapi implements INodeType {
 	description: INodeTypeDescription = {
@@ -31,6 +33,15 @@ export class Deapi implements INodeType {
         required: true,
       },
     ],
+		webhooks: [
+			{
+				name: 'default',
+				httpMethod: 'POST',
+				responseMode: 'onReceived',
+				path: '',
+				restartWebhook: true,
+			},
+		],
 		properties: [
 			// Node properties which the user gets displayed and
 			// can change on the node.
@@ -66,5 +77,9 @@ export class Deapi implements INodeType {
 
   async execute(this: IExecuteFunctions) {
 		return await router.call(this);
+	}
+
+	async webhook(this: IWebhookFunctions) {
+		return await webhook.call(this);
 	}
 }

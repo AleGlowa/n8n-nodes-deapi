@@ -25,6 +25,15 @@ export class DeApi implements ICredentialType {
 			required: true,
 			default: '',
 		},
+		{
+			displayName: 'Webhook Secret',
+			name: 'webhookSecret',
+			type: 'string',
+			typeOptions: { password: true },
+			required: true,
+			default: '',
+			description: 'Secret to verify HMAC signature from deAPI webhooks',
+		},
 	];
 
 	authenticate: IAuthenticateGeneric = {

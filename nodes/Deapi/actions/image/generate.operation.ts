@@ -7,7 +7,6 @@ import { updateDisplayOptions } from 'n8n-workflow';
 
 import type {
   TextToImageRequest,
-  GenerationResponse,
 } from '../../helpers/interfaces';
 import { apiRequest } from '../../transport';
 
@@ -22,17 +21,6 @@ const properties: INodeProperties[] = [
     default: '',
     typeOptions: {
       rows: 2,
-    },
-  },
-  {
-    displayName: 'Negative Prompt',
-    name: 'negative_prompt',
-    type: 'string',
-    placeholder: 'e.g. blur, darkness, noise',
-    description: 'Elements to avoid in the generated image',
-    default: '',
-    typeOptions: {
-      rows: 1,
     },
   },
   {
@@ -81,39 +69,31 @@ const properties: INodeProperties[] = [
     type: 'collection',
     default: {},
     options: [
-      // {
-      //   displayName: 'Quality',
-      //   name: 'quality',
-      //   type: 'options',
-      //   description: 'The quality of the image that will be generated',
-      //   options: [
-      //     {
-      //       name: 'High',
-      //       value: 'high'
-      //     },
-      //     {
-      //       name: 'Medium',
-      //       value: 'medium'
-      //     },
-      //     {
-      //       name: 'Low',
-      //       value: 'low'
-      //     },
-      //   ],
-      //   displayOptions: {
-      //     show: {
-      //       '/model': ['ZImageTurbo_INT8', 'Flux1schnell']
-      //     },
-      //   },
-      //   // TO DECIDE the default quality of generated image.
-      //   default: 'medium',
-      // },
+      {
+        displayName: 'Negative Prompt',
+        name: 'negative_prompt',
+        type: 'string',
+        placeholder: 'e.g. blur, darkness, noise',
+        description: 'Elements to avoid in the generated image',
+        default: '',
+        typeOptions: {
+          rows: 1,
+        },
+      },
       {
         displayName: 'Resolution',
         name: 'square_size',
         type: 'options',
         description: 'Width and height of the generated image in pixels',
         options: [
+          {
+            name: '1024x1024',
+            value: '1024x1024',
+          },
+          {
+            name: '2048x2048',
+            value: '2048x2048',
+          },
           {
             name: '256x256',
             value: '256x256',
@@ -125,14 +105,6 @@ const properties: INodeProperties[] = [
           {
             name: '768x768',
             value: '768x768',
-          },
-          {
-            name: '1024x1024',
-            value: '1024x1024',
-          },
-          {
-            name: '2048x2048',
-            value: '2048x2048',
           },
         ],
         displayOptions: {
@@ -187,25 +159,6 @@ const properties: INodeProperties[] = [
       },
       {
         displayName: 'Resolution',
-        name: 'ZImageTurbo_INT8_portrait_size',
-        type: 'options',
-        description: 'Width and height of the generated image in pixels',
-        options: [
-          {
-            name: '1152x2048',
-            value: '1152x2048',
-          },
-        ],
-        displayOptions: {
-          show: {
-            '/model': ['ZImageTurbo_INT8'],
-            '/ratio': ['portrait'],
-          },
-        },
-        default: '1152x2048',
-      },
-      {
-        displayName: 'Resolution',
         name: 'Flux1schnell_portrait_size',
         type: 'options',
         description: 'Width and height of the generated image in pixels',
@@ -228,21 +181,36 @@ const properties: INodeProperties[] = [
         default: '720x1280',
       },
       {
-        displayName: 'Steps',
-        name: 'ZImageTurbo_INT8_steps',
-        type: 'number',
-        description: 'Number of inference steps',
-        typeOptions: {
-          maxValue: 50,
-          minValue: 1,
-          numberPrecision: 0,
-        },
+        displayName: 'Resolution',
+        name: 'ZImageTurbo_INT8_portrait_size',
+        type: 'options',
+        description: 'Width and height of the generated image in pixels',
+        options: [
+          {
+            name: '1152x2048',
+            value: '1152x2048',
+          },
+        ],
         displayOptions: {
           show: {
-            '/model': ['ZImageTurbo_INT8']
+            '/model': ['ZImageTurbo_INT8'],
+            '/ratio': ['portrait'],
           },
         },
-        default: 8,
+        default: '1152x2048',
+      },
+      {
+        displayName: 'Seed',
+        name: 'seed',
+        type: 'number',
+        description: 'Random seed for generation. By default seed is random.',
+        typeOptions: {
+          // Max 32-bit unsigned number
+          maxValue: 4_294_967_295,
+          minValue: -1,
+          numberPrecision: 0,
+        },
+        default: -1,
       },
       {
         displayName: 'Steps',
@@ -262,17 +230,33 @@ const properties: INodeProperties[] = [
         default: 4,
       },
       {
-        displayName: 'Seed',
-        name: 'seed',
+        displayName: 'Steps',
+        name: 'ZImageTurbo_INT8_steps',
         type: 'number',
-        description: 'Random seed for generation. By default seed is random.',
+        description: 'Number of inference steps',
         typeOptions: {
-          // Max 32-bit unsigned number
-          maxValue: 4_294_967_295,
-          minValue: -1,
+          maxValue: 50,
+          minValue: 1,
           numberPrecision: 0,
         },
-        default: -1,
+        displayOptions: {
+          show: {
+            '/model': ['ZImageTurbo_INT8']
+          },
+        },
+        default: 8,
+      },
+      {
+        displayName: 'Wait Timeout',
+        name: 'waitTimeout',
+        type: 'number',
+        description: 'Maximum time to wait for completion in seconds',
+        default: 60,
+        typeOptions: {
+          minValue: 30,
+          maxValue: 120, // 2 minutes
+          numberPrecision: 0,
+        },
       },
     ]
   }
@@ -293,10 +277,13 @@ export async function execute(this: IExecuteFunctions, i: number): Promise<INode
   type Ratio = 'square' | 'landscape' | 'portrait';
 
   const prompt = this.getNodeParameter('prompt', i) as string;
-  const negativePrompt = this.getNodeParameter('negative_prompt', i) as string;
   const model = this.getNodeParameter('model', i) as Model;
   const ratio = this.getNodeParameter('ratio', i) as Ratio;
   const options = this.getNodeParameter('options', i);
+
+  // Negative Prompt
+  const negativePrompt = options.negative_prompt as (string | undefined);
+  delete options.negative_prompt;
 
   const size = (
     options.square_size ??
@@ -367,22 +354,35 @@ export async function execute(this: IExecuteFunctions, i: number): Promise<INode
   }
   delete options.seed;
 
+  // Get wait timeout configuration (in seconds)
+  const waitTimeout = (options.waitTimeout as number) || 60;
+  delete options.waitTimeout;
+
+  // Calculate wait time (convert seconds to milliseconds)
+  const waitTill = new Date(Date.now() + waitTimeout * 1000);
+
+  // Put execution to wait FIRST - this registers the waiting webhook
+  await this.putExecutionToWait(waitTill);
+
+  // NOW get the webhook resume URL (after the webhook is registered)
+  const webhookUrl = this.evaluateExpression('{{ $execution.resumeUrl }}', i) as string;
+
+  // Build the request body with webhook URL
   const body: TextToImageRequest = {
     prompt: prompt,
-    negative_prompt: negativePrompt,
+    negative_prompt: negativePrompt ?? null,
     model: model,
     width: width,
     height: height,
     steps: steps,
     seed: seed,
+    webhook_url: webhookUrl,
   };
 
-  const response = await (apiRequest.call(this, 'POST', '/txt2img', { body })) as GenerationResponse;
+  // Submit the request to deAPI
+  await apiRequest.call(this, 'POST', '/txt2img', { body });
 
-  return [{
-    json: response,
-    pairedItem: {
-      item: i,
-    }
-  }];
+  // Return the current input data
+  // When the webhook is called, the webhook() method will provide the actual output
+  return this.getInputData();
 }

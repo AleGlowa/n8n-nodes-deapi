@@ -6,12 +6,13 @@ type Data = {
 
 export interface TextToImageRequest extends IDataObject {
   prompt: string,
-  negative_prompt: string,
+  negative_prompt: string | null,
   model: string,
   width: number,
   height: number,
   steps: number,
   seed: number,
+  webhook_url: string,
 }
 
 export interface ImagePromptBoosterRequest extends IDataObject {
