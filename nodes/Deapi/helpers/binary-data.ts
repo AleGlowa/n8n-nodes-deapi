@@ -8,8 +8,7 @@ const CHUNK_SIZE = 256 * 1024;
 
 /**
  * Gets the binary data file for the given item index and given property name.
- * Returns the file name, content type and the file content. Uses streaming
- * when possible.
+ * Returns the file name, content type and the file content as a Buffer.
  */
 
 export async function getBinaryDataFile(
@@ -19,13 +18,24 @@ export async function getBinaryDataFile(
 ) {
   const binaryData = ctx.helpers.assertBinaryData(itemIdx, binaryPropertyData);
 
-  const fileContent = binaryData.id
-    ? await ctx.helpers.getBinaryStream(binaryData.id, CHUNK_SIZE)
-    : await ctx.helpers.getBinaryDataBuffer(itemIdx, binaryPropertyData);
+  let fileContent: Buffer;
+
+  if (binaryData.id) {
+    // File is stored externally, get as stream and convert to buffer
+    const stream = await ctx.helpers.getBinaryStream(binaryData.id, CHUNK_SIZE);
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream) {
+      chunks.push(Buffer.from(chunk));
+    }
+    fileContent = Buffer.concat(chunks);
+  } else {
+    // File is stored in memory, get directly as buffer
+    fileContent = await ctx.helpers.getBinaryDataBuffer(itemIdx, binaryPropertyData);
+  }
 
   return {
     filename: binaryData.fileName,
     contentType: binaryData.mimeType,
     fileContent,
-  }; 
+  };
 }

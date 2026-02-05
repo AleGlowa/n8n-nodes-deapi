@@ -1,5 +1,3 @@
-import FormData from 'form-data';
-
 import {
   IExecuteFunctions,
   INodeExecutionData,
@@ -9,6 +7,7 @@ import {
 
 import { apiRequest } from "../../transport";
 import { getBinaryDataFile } from '../../helpers/binary-data';
+import { generateFormdataBody } from '../../helpers/formdata';
 import { BoosterResponse } from "../../helpers/interfaces";
 
 const properties: INodeProperties[] = [
@@ -65,30 +64,49 @@ export const description = updateDisplayOptions(displayOptions, properties);
 
 export async function execute(this: IExecuteFunctions, i: number): Promise<INodeExecutionData[]> {
 
-  const formData = new FormData();
   const prompt = this.getNodeParameter('prompt', i) as string;
   const options = this.getNodeParameter('options', i);
   const negativePrompt = options.negative_prompt as (string | undefined);
   const refImage = options.binaryPropertyName as (string | undefined);
 
+  // Manually construct multipart/form-data body using streams (avoids loading large files into memory)
+  const boundary = `----n8nFormBoundary${Date.now()}`;
+
+  // Prepare text fields
+  const fields = [
+    { name: 'prompt', value: prompt },
+    { name: 'negative_prompt', value: negativePrompt ?? '' },
+  ];
+
+  // Prepare file fields
+  const files = [];
   if (refImage) {
     const { fileContent, contentType, filename } = await getBinaryDataFile(this, i, refImage);
-  
-    formData.append('image', fileContent, {
-      filename,
+
+    files.push({
+      name: 'image',
+      filename: filename || 'file',
       contentType,
-    })
+      content: fileContent,
+    });
   } else {
-    formData.append('image', '');
+    // Add empty image field if no file provided
+    fields.push({ name: 'image', value: '' });
   }
 
-  formData.append('prompt', prompt);
+  // Generate the multipart/form-data body as a Buffer
+  const body = generateFormdataBody(boundary, fields, files);
 
-  formData.append('negative_prompt', negativePrompt ?? '');
-
-  const response = await (apiRequest.call(this, 'POST', '/prompt/video', {
-    option: { body: formData },
-  })) as BoosterResponse;
+  // Send request with streamed multipart body using apiRequest
+  const response = await apiRequest.call(this, 'POST', '/prompt/video', {
+    headers: {
+      'Content-Type': `multipart/form-data; boundary=${boundary}`,
+    },
+    option: {
+      body,  // Pass body through option to support Readable type
+      json: false,  // Disable JSON mode for multipart/form-data
+    },
+  }) as BoosterResponse;
 
   return [{
     json: response,
