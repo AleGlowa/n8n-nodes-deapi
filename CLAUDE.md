@@ -68,9 +68,8 @@ All API communication goes through `nodes/Deapi/transport/index.ts`:
 
 ### Credentials
 
-Two credential types in `credentials/`:
-1. **DeApi.credentials.ts** - API key authentication for regular node
-2. **DeApiWebhook.credentials.ts** - Webhook secret for trigger node
+One credential type in `credentials/`:
+1. **DeApi.credentials.ts** - API key and webhook secret authentication (used by both the regular node and trigger node)
 
 ### Type Definitions
 
