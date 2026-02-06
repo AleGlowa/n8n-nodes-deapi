@@ -254,7 +254,7 @@ const properties: INodeProperties[] = [
         default: 60,
         typeOptions: {
           minValue: 30,
-          maxValue: 120, // 2 minutes
+          maxValue: 240, // 4 minutes
           numberPrecision: 0,
         },
       },
